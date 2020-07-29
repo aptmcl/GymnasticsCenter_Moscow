@@ -269,24 +269,6 @@ Expected result:
 <img src="./Plots/weast_facade_panel.png" width="800">
 """
 
-# ╔═╡ 62365aac-794c-49b0-b0aa-18abd7fc463c
-glass_panel_height = 0.5
-
-is_above_z_limit(z, z_lim)= z >= z_lim
-
-vert_pts(p, panel_height, z_lim) = is_above_z_limit(p.z, z_lim) ? [] : [p, vert_pts(p+vz(panel_height), z_lim)]
-
-damped_sin_glass_wall(p, a_y, fi, decay, om_y, dist_y, dist_z, n_y, n_z) =
-    [vert_pts(p, panel_height, z_lim) ]
-    map_division((y, z) ->
-#                     y <= d_i ?
-#                     p + vyz(-sin(y/d_i*(1*pi)), z) :
-                        let z = damped_sin_wave(a_y, decay, om_y, y))
-                            is_above_z_limit(z, z_lim) ? p + vyz(y, z) : nothing
-                        end,
-             0, dist_y, n_y,
-             0, dist_z, dist_z/glass_panel_height)
-
 # ╔═╡ d393472d-afe7-4448-a45d-6e260550e22a
 md"""
 ## Interior Walls
@@ -319,6 +301,9 @@ using Interact
 # ╔═╡ c7af4b41-9d68-45ec-8f53-9520f9385b40
 using Khepri
 
+# ╔═╡ 39ebea40-d1a6-11ea-0a2c-7d956e932488
+using PlutoUI
+
 # ╔═╡ 7b837fe4-abcb-47d2-b9d2-afc973cfc946
 render_size(800, 400) # Khepri backends size
 
@@ -337,7 +322,7 @@ macro test(expr...)
 end
 
 # ╔═╡ 7b08c822-abb7-4727-ac7d-dc43726c8aac
-avoid_tests(true)
+avoid_tests(false)
 
 # ╔═╡ bd1cf38d-72b8-4608-a0e6-1a53b63c0b9d
 sinusoidal(a, omega, fi, x) = a*sin(omega*x+fi)
@@ -572,8 +557,8 @@ damped_sin_glass_wall(p, a_y, fi, decay, om_y, dist_y, dist_z, n_y, n_z) =
 
 # ╔═╡ bfa876d0-d1a1-11ea-3180-51aaf47c7484
 begin
-	n_y = 40
-	n_z = 10
+	n_y = 85
+	n_z = 20
 	dist_y = pav_length-2*d_length
 	dist_z = pav_height-d_height
 	west_glass_wall = damped_sin_glass_wall(x(d_width),
@@ -589,7 +574,7 @@ end
 # ╔═╡ f6a34f22-07a4-4a20-8f1f-5d74a1189291
 @test begin
     backend(autocad)
-    new_backend()
+    delete_all_shapes()
     splines4surf(west_glass_wall)
     splines4surf(east_glass_wall)
 end
@@ -689,14 +674,66 @@ vertical_panel_lines(mtx)=
     vertical_panel_lines(west_glass_wall)
 end
 
-# ╔═╡ 52872be2-2380-4097-b769-613b153ba194
+# ╔═╡ 84a76d10-d1a7-11ea-0faa-63d503a8b3d0
+glass_panel_height = 1
+
+# ╔═╡ 8901ed90-d1a7-11ea-0661-61aa58164d59
+is_above_z_limit(z, z_lim)= z >= z_lim
+
+# ╔═╡ 8d97542e-d1a7-11ea-2033-e9bb17478044
+vert_pts(p, panel_height, z_lim) = is_above_z_limit(p.z, z_lim) ? [] : [p, vert_pts(p+vz(panel_height), panel_height, z_lim)...]
+
+# ╔═╡ 62365aac-794c-49b0-b0aa-18abd7fc463c
+damped_sin_glass_wall_2(p, a_y, fi, decay, om_y, dist_y, dist_z, n_y, n_z, panel_height) =
+	let pts = map_division(y -> p+vy(y), 0, dist_y, n_y)
+		zs = map_division(y -> dist_z+damped_sin_wave(a_y, decay, om_y, y), 0, dist_y, n_y) 
+   	 [vert_pts(p, panel_height, z_lim) for (p, z_lim) in zip(pts, zs)]
+	end
+
+# ╔═╡ 31ce9890-d1aa-11ea-28e4-8f569c96ff13
+begin
+	west_glass_wall_2 = damped_sin_glass_wall_2(x(d_width),
+											amp_y_max_top,
+											fi, decay, om_y,
+											dist_y, dist_z, n_y, n_z, glass_panel_height)
+	east_glass_wall_2 = damped_sin_glass_wall_2(x(pav_width-d_width),
+											amp_y_min_bottom,
+											fi, decay, om_y,
+											dist_y, dist_z, n_y, n_z, glass_panel_height)
+end
+
+# ╔═╡ fc8934b0-d1a9-11ea-1487-29fd1f796054
 @test begin
     backend(autocad)
-     splines4surf(west_glass_wall)
-#     splines4surf(east_glass_wall)
-#     vertical_panel_lines(west_glass_wall)
-#     vertical_panel_lines(east_glass_wall)
+    delete_all_shapes()
+    vertical_panel_lines(west_glass_wall_2)
+end
 
+# ╔═╡ a5249682-d1ac-11ea-06af-dbd9d7005a89
+vert_pts_odd(p, panel_height, z_lim) = [p, vert_pts(p+vz(panel_height/2), panel_height, z_lim)...]
+
+# ╔═╡ 78435f10-d1ad-11ea-206d-934aac86dcc5
+f_weave(f1, f2, count) = isodd(count) ? f1 : f2 
+
+# ╔═╡ 5b4f6a20-d1ad-11ea-2d06-f940d72b786e
+damped_sin_glass_wall_3(p, a_y, fi, decay, om_y, dist_y, dist_z, n_y, n_z, panel_height) =
+	let pts = map_division(y -> p+vy(y), 0, dist_y, n_y)
+		zs = map_division(y -> dist_z+damped_sin_wave(a_y, decay, om_y, y), 0, dist_y, n_y) 
+		ns = 1:length(zs)
+	 [f_weave(vert_pts_odd(p, panel_height, z_lim),vert_pts(p, panel_height, z_lim), count)	for (p, z_lim, count) in zip(pts, zs, ns)]
+	end
+
+# ╔═╡ 46771500-d1b0-11ea-2e2c-e96578a1da1f
+west_glass_wall_3 = damped_sin_glass_wall_3(x(d_width),
+											amp_y_max_top,
+											fi, decay, om_y,
+											dist_y, dist_z, n_y, n_z, glass_panel_height)
+
+# ╔═╡ 2555a300-d1b0-11ea-15e2-cb380e7aeb14
+@test begin
+    backend(autocad)
+    delete_all_shapes()
+    vertical_panel_lines(west_glass_wall_3)
 end
 
 # ╔═╡ 19452352-d1a2-11ea-3d0a-17511c2bacae
@@ -743,6 +780,7 @@ end
 # ╠═89f241f0-8f63-4118-96de-8d2a59c32d92
 # ╠═38ae9d22-9623-49ec-b3e5-98a23130080f
 # ╠═c7af4b41-9d68-45ec-8f53-9520f9385b40
+# ╠═39ebea40-d1a6-11ea-0a2c-7d956e932488
 # ╠═7b837fe4-abcb-47d2-b9d2-afc973cfc946
 # ╟─bb8e6976-7872-4bca-a1f1-30e50601c1b4
 # ╠═b3c181b2-d19f-11ea-3f47-b12e496981c3
@@ -826,8 +864,17 @@ end
 # ╠═8bda433a-74a1-46c9-a508-3e9eac8f8aa4
 # ╠═5d69ca2e-c1b3-4e03-b815-cbf1d0950122
 # ╟─4ab2d219-d9be-4a85-891c-0012b9d02140
+# ╠═84a76d10-d1a7-11ea-0faa-63d503a8b3d0
+# ╠═8901ed90-d1a7-11ea-0661-61aa58164d59
+# ╠═8d97542e-d1a7-11ea-2033-e9bb17478044
 # ╠═62365aac-794c-49b0-b0aa-18abd7fc463c
-# ╠═52872be2-2380-4097-b769-613b153ba194
+# ╠═31ce9890-d1aa-11ea-28e4-8f569c96ff13
+# ╠═fc8934b0-d1a9-11ea-1487-29fd1f796054
+# ╠═a5249682-d1ac-11ea-06af-dbd9d7005a89
+# ╠═78435f10-d1ad-11ea-206d-934aac86dcc5
+# ╠═5b4f6a20-d1ad-11ea-2d06-f940d72b786e
+# ╠═46771500-d1b0-11ea-2e2c-e96578a1da1f
+# ╠═2555a300-d1b0-11ea-15e2-cb380e7aeb14
 # ╟─d393472d-afe7-4448-a45d-6e260550e22a
 # ╟─12e5b169-858b-4b8c-b5a9-6a8c448b33db
 # ╟─fa35922a-9da1-46e5-a361-336d49ba098c
