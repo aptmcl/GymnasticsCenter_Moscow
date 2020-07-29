@@ -1,3 +1,0 @@
-Renata
-DESKTOP-C8EICCT 
-Monday, 27 July, 2020  12:41:30 PM
