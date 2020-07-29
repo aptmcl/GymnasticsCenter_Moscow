@@ -1,5 +1,5 @@
 ### A Pluto.jl notebook ###
-# v0.10.13
+# v0.11.1
 
 using Markdown
 using InteractiveUtils
@@ -7,6 +7,13 @@ using InteractiveUtils
 # ╔═╡ b95fbfdd-38a8-49b4-90ba-515ac4622600
 md"""
 # Irina Viner-Usmanova Rhythmic Gymnastics Centre
+"""
+
+# ╔═╡ b538f7c2-d1a5-11ea-3191-4bf2b9263933
+md"""
+# Irina Viner-Usmanova Rhythmic Gymnastics Centre
+
+![alt text](https://raw.githubusercontent.com/adam-p/markdown-here/master/src/common/images/icon48.png "Logo Title Text 1")
 """
 
 # ╔═╡ bb8e6976-7872-4bca-a1f1-30e50601c1b4
@@ -333,7 +340,7 @@ sin_array_y(p, a, omega, fi, dist, n) = [p+vxy(i, sinusoidal(a, omega, fi, i)) f
 # ╔═╡ d0cc21c9-28ee-4b9e-b534-968e70486f66
 @test begin
     backend(notebook)
-    new_backend()
+	new_backend()
     line(sin_array_y(u0(), 5, 1, 0, 50, 100))
 end
 
@@ -346,7 +353,6 @@ damped_sin_array_z(p, a, d, omega, dist, n) = [p+vxz(i, damped_sin_wave(a, d, om
 # ╔═╡ 3cea7332-c1a6-4d59-a391-6310e8cbb3d0
 @test begin
     backend(notebook)
-    new_backend()
     line(damped_sin_array_z(u0(), 5, 0.1, 1, 50, 100))
 end
 
@@ -355,6 +361,13 @@ damped_sin_roof_pts_1(p, a_x, a_y, fi, decay, om_x, om_y, dist_x, dist_y, n_x, n
     map_division((x, y)->p+vxyz(x, y, sinusoidal(a_x, om_x, fi, x)+damped_sin_wave(a_y, decay, om_y, y)),
         0, dist_x, n_x,
         0, dist_y, n_y)
+
+# ╔═╡ 4cf3d2cd-a31a-431d-8919-d254025f1a19
+@test begin
+    backend(autocad)
+	new_backend()
+        surface_grid(damped_sin_roof_pts_1(u0(), 3, 10, 0, 0.1, 0.2, 1, 50, 100, 100, 200))
+end
 
 # ╔═╡ 8533a2c9-6364-412a-8ee0-3aaa0db203a7
 begin
@@ -389,17 +402,6 @@ damped_sin_roof_pts(p, h, a_x, a_y_min, a_y_max, fi, decay, om_x, om_y, dist_x, 
                          damped_sin_wave(a_y_max - (a_y_max-a_y_min)/dist_x*x, decay, om_y, y)),
              0, dist_x, n_x,
              0, dist_y, n_y)
-
-# ╔═╡ 4cf3d2cd-a31a-431d-8919-d254025f1a19
-@test begin
-    backend(meshcat)
-    new_backend()
-    @manipulate for ampx = widget(0:0.1:3, label="Amplitude x"),
-                ampy = widget(0:0.1:20, label="Amplitude y")
-            delete_all_shapes()
-            surface_grid(damped_sin_roof_pts(u0(), ampx, ampy, 0, 0.1, 0.2, 1, 50, 100, 100, 200))
-    end
-end
 
 # ╔═╡ 9b4ad02f-1846-41c1-bdd8-be1d7aef9e5c
 @test begin
@@ -490,53 +492,34 @@ transpose_array(arrays) =
     [[row[i] for row in arrays]
      for i in 1:length(arrays[1])]
 
-# ╔═╡ 4f86e393-6b5c-4d36-9a9b-3daf11d5629f
-@test begin
-    backend(meshcat)
-    new_backend()
-    @manipulate for ampx = widget(1:0.1:3, label="Amplitude x"),
-                    ampy_top_min = widget(3:0.1:15, label="Minimum Amplitude y"),
-                    ampy_top_max = widget(3:0.1:15, label="Maximum Amplitude y"),
-                    ampy_bottom_min = widget(1:0.1:12, label="Minimum Amplitude y"),
-                    ampy_bottom_max = widget(1:0.1:12, label="Maximum Amplitude y"),
-                    h = widget(2:1:20, label="Height")
-                delete_all_shapes()
-        surface_grid(damped_sin_roof_pts(u0(), h,
-                                   ampx, ampy_top_min, ampy_top_max,
-                                   fi, decay, om_x, om_y,
-                                   pav_width, pav_length-d_length, 50, 200))
-        surface_grid(damped_sin_roof_pts(xy(d_width,d_length*1), h-d_height,
-                                      ampx, ampy_bottom_min, ampy_bottom_max,
-                                      fi, decay, om_x, om_y,
-                                      pav_width - d_width*2, pav_length-2*d_length, 50, 200))
-    end
-end
+# ╔═╡ 4db4ca2e-d1ae-11ea-1748-8f457498ac23
+itera_2triangs(ptss) =
+    vcat([vcat([[[p0,p1,p3],[p1,p2,p3]]
+                for (p0,p1,p2,p3)
+                in zip(pts0[1:end-1], pts1[1:end-1], pts1[2:end], pts0[2:end])]...)
+         for (pts0, pts1) in zip(ptss[1:end-1], ptss[2:end])]...)
 
 # ╔═╡ 2a0665af-c29b-4140-94a3-86e520b4d696
-@test begin
-    backend(meshcat)
-    new_backend()
-    @manipulate for ampx = widget(1:0.1:3, label="Amplitude x"),
-                ampy_top_min = widget(3:0.1:15, label="Minimum Amplitude y"),
-                ampy_top_max = widget(3:0.1:15, label="Maximum Amplitude y"),
-                ampy_bottom_min = widget(1:0.1:12, label="Minimum Amplitude y"),
-                ampy_bottom_max = widget(1:0.1:12, label="Maximum Amplitude y"),
-                h = widget(2:1:20, label="Height")
-            delete_all_shapes()
-            top_roof=damped_sin_roof_pts(x(0), h,
-                                   ampx, ampy_top_min, ampy_top_max,
+begin
+    top_roof=damped_sin_roof_pts(x(0), 15,
+                                   3, 6, 9,
                                    fi, decay, om_x, om_y,
                                    pav_width, pav_length-d_length, 50, 100)
-            bottom_roof=damped_sin_roof_pts(xy(d_width,d_length*1), h-d_height,
-                                      ampx, ampy_bottom_min, ampy_bottom_max,
+    bottom_roof=damped_sin_roof_pts(xy(d_width,d_length*1), 15-d_height,
+                                      3, 6, 9,
                                       fi, decay, om_x, om_y,
-                                      pav_width - d_width*2, pav_length-2*d_length, 50, 100)
-            surface_grid(top_roof)
-            surface_grid(bottom_roof)
-            loft_curves([spline(top_roof[1]),spline(bottom_roof[1])])
-            loft_curves([line(top_roof[end]),line(bottom_roof[end])])
-            loft_curves([line(transpose_array(top_roof)[end]),line(transpose_array(bottom_roof)[end])])
-    end
+                                      pav_width - d_width*2, pav_length-2*d_length, 									  50, 100)
+
+end
+
+# ╔═╡ aee0e370-d1ae-11ea-19b8-c9fc6bfba995
+@test begin
+    backend(autocad)
+    new_backend()
+	map(ps->surface_polygon(ps),
+			itera_2triangs(top_roof))
+	map(ps->surface_polygon(ps),
+			itera_2triangs(bottom_roof))        
 end
 
 # ╔═╡ 72eccccb-e3aa-4724-956a-e6369ea674f2
@@ -777,6 +760,7 @@ end
 
 # ╔═╡ Cell order:
 # ╟─b95fbfdd-38a8-49b4-90ba-515ac4622600
+# ╠═b538f7c2-d1a5-11ea-3191-4bf2b9263933
 # ╠═89f241f0-8f63-4118-96de-8d2a59c32d92
 # ╠═38ae9d22-9623-49ec-b3e5-98a23130080f
 # ╠═c7af4b41-9d68-45ec-8f53-9520f9385b40
@@ -834,8 +818,9 @@ end
 # ╟─89f0c248-ac43-455c-a1e3-140e218b3cce
 # ╟─3a55c28a-bea5-41a4-b948-aca71ed2d311
 # ╠═5e0636c2-40c5-4337-b46b-1df7a0b6f3e6
-# ╠═4f86e393-6b5c-4d36-9a9b-3daf11d5629f
+# ╠═4db4ca2e-d1ae-11ea-1748-8f457498ac23
 # ╠═2a0665af-c29b-4140-94a3-86e520b4d696
+# ╠═aee0e370-d1ae-11ea-19b8-c9fc6bfba995
 # ╟─710594d3-49f1-4fe6-88fe-6b855905c2ac
 # ╟─23b94d5b-8a95-4572-b9d1-7f1c21c29cd8
 # ╠═72eccccb-e3aa-4724-956a-e6369ea674f2
