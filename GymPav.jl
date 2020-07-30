@@ -13,7 +13,7 @@ md"""
 md"""
 # Irina Viner-Usmanova Rhythmic Gymnastics Centre
 
-![alt text](https://raw.githubusercontent.com/adam-p/markdown-here/master/src/common/images/icon48.png "Logo Title Text 1")
+![alt text](https://github.com/KhepriNotebook/GymnasticsCenter_Moscow/blob/master/Figures/front_vierendeel.png)
 """
 
 # ╔═╡ bb8e6976-7872-4bca-a1f1-30e50601c1b4
@@ -329,7 +329,7 @@ macro test(expr...)
 end
 
 # ╔═╡ 7b08c822-abb7-4727-ac7d-dc43726c8aac
-avoid_tests(false)
+avoid_tests(true)
 
 # ╔═╡ bd1cf38d-72b8-4608-a0e6-1a53b63c0b9d
 sinusoidal(a, omega, fi, x) = a*sin(omega*x+fi)
